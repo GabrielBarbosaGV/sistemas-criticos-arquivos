@@ -18,7 +18,7 @@ INVARIANT
     admittees <: NATURAL
     & prohibitions : admittees --> POW(NATURAL)
     & time_fifths_of_day : NATURAL
-    & has_eaten : admittees * NATURAL +-> BOOL
+    & has_eaten : admittees * NATURAL +-> 0..5
     & was_served : admittees * NATURAL +-> BOOL
     & eaten_dish : admittees * NATURAL +-> POW(NATURAL)
 INITIALISATION
@@ -35,6 +35,12 @@ was_fed <-- has_eaten_at(admittee, time) =
         & time < time_fifths_of_day
         & admittee |-> time : dom(has_eaten)
     THEN was_fed := has_eaten(admittee, time)
+    END;
+
+feed(admittee, dish) =
+    PRE admittee : admittees
+        & dish <: NATURAL
+        & dish /\ prohibitions == {}
+    THEN has_eaten(admittees, time_fifths_of_day) := 5
     END
-    
 END
