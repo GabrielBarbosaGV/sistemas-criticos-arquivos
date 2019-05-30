@@ -7,6 +7,16 @@ MACHINE
 SETS
     INGREDIENTS;
     PATIENTS
+CONSTANTS
+    MIN_AMOUNT_FOOD,
+    MAX_AMOUNT_FOOD
+PROPERTIES
+    MIN_AMOUNT_FOOD : NATURAL
+    & MAX_AMOUNT_FOOD : NATURAL
+    & MIN_AMOUNT_FOOD = 0
+    & MAX_AMOUNT_FOOD = 5
+    & card(PATIENTS) > 0
+    & card(INGREDIENTS) > 0
 VARIABLES
     admittees,
     prohibitions,
@@ -15,15 +25,15 @@ VARIABLES
     has_eaten,
     eaten_dish
 INVARIANT
-    admittees <: NATURAL
-    & prohibitions : admittees --> POW(NATURAL)
+    admittees <: PATIENTS
+    & prohibitions : admittees --> POW(INGREDIENTS)
     & time_fifths_of_day : NATURAL
-    & has_eaten : admittees * NATURAL +-> 0..5
+    & has_eaten : admittees * NATURAL +-> MIN_AMOUNT_FOOD..MAX_AMOUNT_FOOD
     & was_served : admittees * NATURAL +-> BOOL
     & eaten_dish : admittees * NATURAL +-> POW(NATURAL)
 INITIALISATION
-    admittees := 1..3
-    || prohibitions := {(1 |-> {1}),(2 |-> {2, 3}),(3 |-> {})}
+    admittees := {}
+    || prohibitions := admittees * {}
     || time_fifths_of_day := 0
     || has_eaten := {}
     || was_served := {}
@@ -37,10 +47,13 @@ was_fed <-- has_eaten_at(admittee, time) =
     THEN was_fed := has_eaten(admittee, time)
     END;
 
-feed(admittee, dish) =
+feed(admittee, dish, amount) =
     PRE admittee : admittees
-        & dish <: NATURAL
-        & dish /\ prohibitions == {}
-    THEN has_eaten(admittees, time_fifths_of_day) := 5
+        & dish <: INGREDIENTS
+        & dish /\ prohibitions(admittee) = {}
+        & amount : NATURAL
+        & amount >= MIN_AMOUNT_FOOD
+        & amount <= MAX_AMOUNT_FOOD
+    THEN has_eaten(admittee, time_fifths_of_day) := amount
     END
 END
