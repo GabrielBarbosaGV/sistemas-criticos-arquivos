@@ -22,19 +22,22 @@ VARIABLES
     prohibitions,
     time_fifths_of_day,
     amount_eaten,
-    eaten_dish
+    eaten_dish,
+    time_of_admission
 INVARIANT
     admittees <: PATIENTS
     & prohibitions : admittees --> POW(INGREDIENTS)
     & time_fifths_of_day : NATURAL
     & amount_eaten : admittees * NATURAL +-> MIN_AMOUNT_FOOD..MAX_AMOUNT_FOOD
     & eaten_dish : admittees * NATURAL +-> POW(INGREDIENTS)
+    & time_of_admission : admittees +-> NATURAL
 INITIALISATION
     admittees := {}
     || prohibitions := {} * {}
     || time_fifths_of_day := 0
     || amount_eaten := {}
     || eaten_dish := {}
+    || time_of_admission := {}
 OPERATIONS
 was_fed <-- amount_eaten_at(admittee, time) =
     PRE admittee : admittees
@@ -53,6 +56,7 @@ feed(admittee, dish, amount) =
         & amount : NATURAL
         & amount >= MIN_AMOUNT_FOOD
         & amount <= MAX_AMOUNT_FOOD
+        & time_of_admission(admittee) /= time_fifths_of_day
         & (((time_fifths_of_day mod 5 = 0)
                 or (time_fifths_of_day mod 5 = 2)
                 or (time_fifths_of_day mod 5 = 4)) => amount > 0)
@@ -81,6 +85,7 @@ admit_patient(to_admit, prohibited_ingredients) =
         & prohibited_ingredients <: INGREDIENTS
     THEN admittees := admittees \/ { to_admit }
         || prohibitions(to_admit) := prohibited_ingredients
+        || time_of_admission(to_admit) := time_fifths_of_day
     END;
     
 discharge_patient(to_discharge) =
@@ -88,6 +93,15 @@ discharge_patient(to_discharge) =
     THEN admittees := admittees - { to_discharge }
         || prohibitions := { to_discharge } <<| prohibitions
         || amount_eaten := ({ to_discharge } <| dom(amount_eaten)) <<| amount_eaten
+        || eaten_dish := ({to_discharge } <| dom(eaten_dish)) <<| eaten_dish
+        || time_of_admission := { to_discharge } <<| time_of_admission
+    END;
+    
+change_prohibitions(admittee, new_prohibitions) = 
+    PRE admittee : admittees
+        & new_prohibitions <: INGREDIENTS
+        & new_prohibitions /= prohibitions(admittee)
+    THEN prohibitions(admittee) := new_prohibitions
     END;
     
 pass_time =
